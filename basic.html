@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Digital X-Ray Technician</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f8fa;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Main layout */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 22px;
+            margin: 0;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+        }
+        
+        .back-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        /* Avatar section - with white background */
+        .avatar-section {
+            flex: 0 0 70%;
+            background-color: #ffffff;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .avatar-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            background-color: #ffffff;
+        }
+        
+        .avatar-iframe-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+        
+        .avatar-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: #ffffff;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        /* Chat section */
+        .chat-section {
+            flex: 0 0 30%;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            border-left: 1px solid #ddd;
+        }
+        
+        .chat-header {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .chat-header h2 {
+            font-size: 18px;
+            margin: 0;
+            color: #2c3e50;
+        }
+        
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            max-width: 85%;
+            word-wrap: break-word;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: auto;
+            border-bottom-right-radius: 0;
+        }
+        
+        .assistant-message {
+            background-color: #f1f1f1;
+            margin-right: auto;
+            border-bottom-left-radius: 0;
+        }
+        
+        .input-area {
+            padding: 15px;
+            background-color: white;
+            border-top: 1px solid #ddd;
+            display: flex;
+        }
+        
+        .input-area input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .input-buttons {
+            display: flex;
+            gap: 10px;
+            margin-left: 10px;
+        }
+        
+        .input-button {
+            width: 44px;
+            height: 44px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .mic-button {
+            background-color: #e74c3c;
+        }
+        
+        .mic-button.listening {
+            background-color: #27ae60;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .avatar-section {
+                flex: 0 0 50%;
+            }
+            
+            .chat-section {
+                flex: 0 0 50%;
+                border-left: none;
+                border-top: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>Digital X-Ray Technician</h1>
+            <div class="header-right">
+                <button class="back-button" id="backButton">Back to Configuration</button>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="avatar-section">
+                <div class="avatar-container">
+                    <div class="avatar-iframe-container">
+                        <iframe id="avatarIframe" class="avatar-iframe" src="http://127.0.0.1:5000/" frameborder="0"></iframe>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-section">
+                <div class="chat-header">
+                    <h2>Conversation</h2>
+                </div>
+                
+                <div class="chat-container" id="chatContainer">
+                    <div class="message assistant-message">
+                        Hello! I'm your Digital X-Ray Technician assistant. How can I help you today?
+                    </div>
+                </div>
+                
+                <div class="input-area">
+                    <input type="text" id="userInput" placeholder="Type your question here...">
+                    <div class="input-buttons">
+                        <button id="micButton" class="input-button mic-button">🎤</button>
+                        <button id="sendButton" class="input-button">➤</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const chatContainer = document.getElementById('chatContainer');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const micButton = document.getElementById('micButton');
+        const avatarIframe = document.getElementById('avatarIframe');
+        const backButton = document.getElementById('backButton');
+        
+        // Global variables
+        let iframeDoc;
+        let clientId;
+        let chatRequestSentTime;
+        let isFirstResponseChunk = true;
+        let lastAssistantResponse = "";
+        let socket;
+        let recognition;
+        let isListening = false;
+        
+        // Regular expressions for latency tracking
+        const sttLatencyRegex = new RegExp(/<STTL>(\d+)<\/STTL>/);
+        const firstTokenLatencyRegex = new RegExp(/<FTL>(\d+)<\/FTL>/);
+        const firstSentenceLatencyRegex = new RegExp(/<FSL>(\d+)<\/FSL>/);
+        
+        // Welcome message
+        const welcomeMessage = "Hello! I'm your Digital X-Ray Technician assistant. How can I help you today?";
+        
+        // Initialize speech recognition
+        function initSpeechRecognition() {
+            // Check if the browser supports speech recognition
+            if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+                // Create a speech recognition instance
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                
+                // Configure the speech recognition
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+                
+                // Handle the results
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    userInput.value = transcript;
+                    sendMessage();
+                };
+                
+                // Handle end of speech
+                recognition.onend = function() {
+                    isListening = false;
+                    micButton.classList.remove('listening');
+                };
+                
+                // Handle errors
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    isListening = false;
+                    micButton.classList.remove('listening');
+                };
+                
+                return true;
+            } else {
+                console.error('Speech recognition not supported in this browser');
+                return false;
+            }
+        }
+        
+        // Toggle speech recognition
+        function toggleSpeechRecognition() {
+            if (!recognition) {
+                if (!initSpeechRecognition()) {
+                    alert('Speech recognition is not supported in your browser.');
+                    return;
+                }
+            }
+            
+            if (isListening) {
+                // Stop listening
+                recognition.stop();
+                isListening = false;
+                micButton.classList.remove('listening');
+            } else {
+                // Start listening
+                try {
+                    recognition.start();
+                    isListening = true;
+                    micButton.classList.add('listening');
+                } catch (e) {
+                    console.error('Error starting speech recognition:', e);
+                }
+            }
+        }
+        
+        // Function to send a message
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+            
+            // Add user message to chat
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'message user-message';
+            userMessageDiv.textContent = message;
+            chatContainer.appendChild(userMessageDiv);
+            
+            // Clear input
+            userInput.value = '';
+            
+            // Scroll to bottom
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Get iframe document
+            iframeDoc = avatarIframe.contentDocument || avatarIframe.contentWindow.document;
+            
+            // Create assistant message placeholder
+            const assistantMessageDiv = document.createElement('div');
+            assistantMessageDiv.className = 'message assistant-message';
+            
+            // Send message to avatar using the handleUserQuery function from basicbackup.js
+            chatRequestSentTime = new Date();
+            
+            try {
+                // Try to directly call the handleUserQuery function in the iframe
+                if (iframeDoc && typeof iframeDoc.defaultView.handleUserQuery === 'function') {
+                    iframeDoc.defaultView.handleUserQuery(message);
+                } else {
+                    // Fallback: Try to find and use the chat input in the iframe
+                    const inputField = iframeDoc.querySelector('input[type="text"]');
+                    if (inputField) {
+                        inputField.value = message;
+                        
+                        // Find the form or submit button
+                        const form = inputField.closest('form');
+                        if (form) {
+                            form.dispatchEvent(new Event('submit', { bubbles: true }));
+                        } else {
+                            // Look for a submit button
+                            const submitButton = iframeDoc.querySelector('button[type="submit"]');
+                            if (submitButton) {
+                                submitButton.click();
+                            }
+                        }
+                    }
+                }
+                
+                // Monitor for response in the chatHistory element
+                const chatHistory = iframeDoc.getElementById('chatHistory');
+                if (chatHistory) {
+                    // Set up a MutationObserver to watch for changes
+                    const observer = new MutationObserver(function(mutations) {
+                        const historyText = chatHistory.innerHTML || chatHistory.value || chatHistory.textContent;
+                        
+                        // Extract the latest assistant response
+                        const assistantResponses = historyText.split('Assistant: ');
+                        if (assistantResponses.length > 1) {
+                            let latestResponse = assistantResponses[assistantResponses.length - 1];
+                            
+                            // Trim the response to end at the next "User: " or the end of the text
+                            const userIndex = latestResponse.indexOf('User: ');
+                            if (userIndex !== -1) {
+                                latestResponse = latestResponse.substring(0, userIndex);
+                            }
+                            
+                            // Clean up the response
+                            latestResponse = latestResponse.trim();
+                            
+                            // Check if this is a new response
+                            if (latestResponse !== lastAssistantResponse && latestResponse !== '') {
+                                lastAssistantResponse = latestResponse;
+                                
+                                // Update the assistant message
+                                assistantMessageDiv.textContent = latestResponse;
+                                chatContainer.appendChild(assistantMessageDiv);
+                                chatContainer.scrollTop = chatContainer.scrollHeight;
+                            }
+                        }
+                    });
+                    
+                    // Start observing the chat history
+                    observer.observe(chatHistory, { 
+                        childList: true, 
+                        characterData: true, 
+                        subtree: true 
+                    });
+                }
+                
+                // Fallback: If we can't monitor the chat history, add a processing message
+                if (!chatHistory) {
+                    assistantMessageDiv.textContent = "I'm processing your question. Please wait...";
+                    chatContainer.appendChild(assistantMessageDiv);
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }
+            } catch (e) {
+                console.error('Error sending message:', e);
+                
+                // Add a fallback message
+                assistantMessageDiv.textContent = "I'm processing your question. Please wait...";
+                chatContainer.appendChild(assistantMessageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+        
+        // Function to initialize the avatar
+        function initializeAvatar() {
+            try {
+                iframeDoc = avatarIframe.contentDocument || avatarIframe.contentWindow.document;
+                
+                // Find and click the "Open Avatar Session" button
+                const buttons = iframeDoc.querySelectorAll('button');
+                let openSessionButton = null;
+                
+                for (let i = 0; i < buttons.length; i++) {
+                    if (buttons[i].textContent.includes('Open Avatar Session')) {
+                        openSessionButton = buttons[i];
+                        break;
+                    }
+                }
+                
+                if (openSessionButton) {
+                    openSessionButton.click();
+                    console.log('Clicked Open Avatar Session button');
+                    
+                    // Try to get the client ID
+                    const clientIdElement = iframeDoc.getElementById('clientId');
+                    if (clientIdElement) {
+                        clientId = clientIdElement.value;
+                        console.log('Got client ID:', clientId);
+                    }
+                    
+                    // Set up WebSocket if available
+                    if (typeof io !== 'undefined' && clientId) {
+                        setupWebSocket();
+                    }
+                } else {
+                    console.error('Open Avatar Session button not found');
+                }
+            } catch (e) {
+                console.error('Error initializing avatar:', e);
+            }
+        }
+        
+        // Function to set up WebSocket connection
+        function setupWebSocket() {
+            if (typeof io !== 'undefined' && clientId) {
+                socket = io.connect(`${window.location.origin}?clientId=${clientId}`);
+                
+                socket.on('connect', function() {
+                    console.log('WebSocket connected.');
+                });
+                
+                socket.on('response', function(data) {
+                    let path = data.path;
+                    if (path === 'api.chat') {
+                        let chunkString = data.chatResponse;
+                        
+                        // Process the response
+                        if (sttLatencyRegex.test(chunkString)) {
+                            let sttLatency = parseInt(sttLatencyRegex.exec(chunkString)[0].replace('<STTL>', '').replace('</STTL>', ''));
+                            console.log(`STT latency: ${sttLatency} ms`);
+                            chunkString = chunkString.replace(sttLatencyRegex, '');
+                        }
+                        
+                        if (firstTokenLatencyRegex.test(chunkString)) {
+                            let aoaiFirstTokenLatency = parseInt(firstTokenLatencyRegex.exec(chunkString)[0].replace('<FTL>', '').replace('</FTL>', ''));
+                            chunkString = chunkString.replace(firstTokenLatencyRegex, '');
+                        }
+                        
+                        if (firstSentenceLatencyRegex.test(chunkString)) {
+                            let aoaiFirstSentenceLatency = parseInt(firstSentenceLatencyRegex.exec(chunkString)[0].replace('<FSL>', '').replace('</FSL>', ''));
+                            chatResponseReceivedTime = new Date();
+                            console.log(`AOAI latency: ${aoaiFirstSentenceLatency} ms`);
+                            chunkString = chunkString.replace(firstSentenceLatencyRegex, '');
+                        }
+                        
+                        // Find or create an assistant message in the chat container
+                        let assistantMessageDiv;
+                        const existingMessages = chatContainer.querySelectorAll('.assistant-message');
+                        if (existingMessages.length > 0 && existingMessages[existingMessages.length - 1].textContent.includes("I'm processing your question")) {
+                            // Replace the processing message with the actual response
+                            assistantMessageDiv = existingMessages[existingMessages.length - 1];
+                            assistantMessageDiv.textContent = chunkString;
+                        } else {
+                            // Create a new message element
+                            assistantMessageDiv = document.createElement('div');
+                            assistantMessageDiv.className = 'message assistant-message';
+                            assistantMessageDiv.textContent = chunkString;
+                            chatContainer.appendChild(assistantMessageDiv);
+                        }
+                        
+                        // Scroll to bottom
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }
+                });
+            }
+        }
+        
+        // Function to monitor for responses in the iframe
+        function monitorIframeResponses() {
+            try {
+                iframeDoc = avatarIframe.contentDocument || avatarIframe.contentWindow.document;
+                
+                // Look for the chat history element
+                const chatHistory = iframeDoc.getElementById('chatHistory');
+                
+                if (chatHistory) {
+                    // Set up a MutationObserver to watch for changes
+                    const observer = new MutationObserver(function(mutations) {
+                        const historyText = chatHistory.textContent || chatHistory.value || chatHistory.innerHTML;
+                        
+                        // Extract the latest assistant response
+                        const assistantResponses = historyText.split('Assistant: ');
+                        if (assistantResponses.length > 1) {
+                            let latestResponse = assistantResponses[assistantResponses.length - 1];
+                            
+                            // Trim the response to end at the next "User: " or the end of the text
+                            const userIndex = latestResponse.indexOf('User: ');
+                            if (userIndex !== -1) {
+                                latestResponse = latestResponse.substring(0, userIndex);
+                            }
+                            
+                            // Clean up the response
+                            latestResponse = latestResponse.trim();
+                            
+                            // Check if this is a new response
+                            if (latestResponse !== lastAssistantResponse && latestResponse !== '') {
+                                lastAssistantResponse = latestResponse;
+                                
+                                // Find or create an assistant message in the chat container
+                                let assistantMessageDiv;
+                                const existingMessages = chatContainer.querySelectorAll('.assistant-message');
+                                if (existingMessages.length > 0 && existingMessages[existingMessages.length - 1].textContent.includes("I'm processing your question")) {
+                                    // Replace the processing message with the actual response
+                                    assistantMessageDiv = existingMessages[existingMessages.length - 1];
+                                    assistantMessageDiv.textContent = latestResponse;
+                                } else {
+                                    // Create a new message element
+                                    assistantMessageDiv = document.createElement('div');
+                                    assistantMessageDiv.className = 'message assistant-message';
+                                    assistantMessageDiv.textContent = latestResponse;
+                                    chatContainer.appendChild(assistantMessageDiv);
+                                }
+                                
+                                // Scroll to bottom
+                                chatContainer.scrollTop = chatContainer.scrollHeight;
+                            }
+                        }
+                    });
+                    
+                    // Start observing the chat history
+                    observer.observe(chatHistory, { 
+                        childList: true, 
+                        characterData: true, 
+                        subtree: true 
+                    });
+                    
+                    console.log('Set up observer for chat history');
+                }
+            } catch (e) {
+                console.error('Error monitoring iframe responses:', e);
+            }
+        }
+        
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Microphone button click handler
+        micButton.addEventListener('click', function() {
+            // First try to use our own speech recognition
+            if (initSpeechRecognition()) {
+                toggleSpeechRecognition();
+            } else {
+                // If our speech recognition isn't available, try to use the iframe's microphone button
+                try {
+                    iframeDoc = avatarIframe.contentDocument || avatarIframe.contentWindow.document;
+                    
+                    // Find and click the "Start Microphone" button
+                    const buttons = iframeDoc.querySelectorAll('button');
+                    let startMicButton = null;
+                    
+                    for (let i = 0; i < buttons.length; i++) {
+                        if (buttons[i].textContent.includes('Start Microphone')) {
+                            startMicButton = buttons[i];
+                            break;
+                        }
+                    }
+                    
+                    if (startMicButton) {
+                        startMicButton.click();
+                        console.log('Clicked Start Microphone button');
+                        
+                        // Set up a listener for speech results from the iframe
+                        const checkForSpeechResults = setInterval(function() {
+                            try {
+                                // Check if there's a new message in the iframe's input field
+                                const iframeInputField = iframeDoc.querySelector('input[type="text"]');
+                                if (iframeInputField && iframeInputField.value.trim() !== '') {
+                                    // Copy the value to our input field
+                                    userInput.value = iframeInputField.value;
+                                    
+                                    // Clear the interval
+                                    clearInterval(checkForSpeechResults);
+                                    
+                                    // Send the message
+                                    sendMessage();
+                                }
+                            } catch (e) {
+                                console.error('Error checking for speech results:', e);
+                                clearInterval(checkForSpeechResults);
+                            }
+                        }, 500);
+                        
+                        // Stop checking after 10 seconds
+                        setTimeout(function() {
+                            clearInterval(checkForSpeechResults);
+                        }, 10000);
+                    } else {
+                        console.error('Start Microphone button not found');
+                        alert('Microphone functionality is not available.');
+                    }
+                } catch (e) {
+                    console.error('Error clicking Start Microphone button:', e);
+                    alert('Microphone functionality is not available.');
+                }
+            }
+        });
+        
+        backButton.addEventListener('click', function() {
+            alert('This would take you back to the configuration page');
+        });
+        
+        // Wait for iframe to load, then initialize avatar
+        avatarIframe.onload = function() {
+            console.log('Iframe loaded');
+            
+            // Wait a moment for the iframe content to fully initialize
+            setTimeout(function() {
+                try {
+                    // Get a reference to the iframe document
+                    iframeDoc = avatarIframe.contentDocument || avatarIframe.contentWindow.document;
+                    console.log('Got iframe document reference');
+                    
+                    // Try to get the client ID
+                    const clientIdElement = iframeDoc.getElementById('clientId');
+                    if (clientIdElement) {
+                        clientId = clientIdElement.value;
+                        console.log('Got client ID:', clientId);
+                    }
+                    
+                    // Initialize the avatar
+                    initializeAvatar();
+                    
+                    // Set up monitoring for responses
+                    monitorIframeResponses();
+                    
+                    // Initialize speech recognition
+                    initSpeechRecognition();
+                } catch (e) {
+                    console.error('Error accessing iframe content:', e);
+                }
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
+
+
+

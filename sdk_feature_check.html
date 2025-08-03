@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Azure Speech SDK Feature Check</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #log { 
+            border: 1px solid #ccc; 
+            padding: 10px; 
+            height: 400px; 
+            overflow-y: auto;
+            font-family: monospace;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Azure Speech SDK Feature Check</h1>
+    <button id="checkBtn">Check SDK Features</button>
+    <div id="log"></div>
+    
+    <script>
+        // Logging function
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}<br>`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+        
+        // Load the Speech SDK
+        async function loadSpeechSDK() {
+            return new Promise((resolve, reject) => {
+                if (window.SpeechSDK) {
+                    resolve(window.SpeechSDK);
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = 'https://aka.ms/csspeech/jsbrowserpackageraw';
+                script.onload = () => {
+                    if (window.SpeechSDK) {
+                        resolve(window.SpeechSDK);
+                    } else {
+                        reject(new Error('Speech SDK loaded but not available'));
+                    }
+                };
+                script.onerror = () => reject(new Error('Failed to load Speech SDK'));
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Check SDK features
+        async function checkSdkFeatures() {
+            try {
+                log('Loading Speech SDK...');
+                const SpeechSDK = await loadSpeechSDK();
+                log('Speech SDK loaded');
+                
+                // Check SDK version
+                log(`SDK Version: ${SpeechSDK.Version || 'Unknown'}`);
+                
+                // Check available classes
+                log('Checking available classes...');
+                const classes = [
+                    'SpeechConfig',
+                    'AudioConfig',
+                    'SpeechSynthesizer',
+                    'AvatarSynthesizer',
+                    'AvatarConfig',
+                    'Connection'
+                ];
+                
+                classes.forEach(className => {
+                    log(`${className}: ${SpeechSDK[className] ? 'Available' : 'Not available'}`);
+                });
+                
+                // Check if we can create a speech config
+                log('Creating speech config...');
+                const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+                    '5K4HGeAVHCcjRudmzpcX6LnZiQFo2PTQabPLhaDxTcTiwcvvsGrpJQQJ99BCACHYHv6XJ3w3AAAYACOGsXxm', 
+                    'eastus2'
+                );
+                log('Speech config created successfully');
+                
+                // Check available properties and methods
+                if (SpeechSDK.AvatarSynthesizer) {
+                    log('Checking AvatarSynthesizer properties and methods...');
+                    const prototypeProps = Object.getOwnPropertyNames(SpeechSDK.AvatarSynthesizer.prototype);
+                    log(`AvatarSynthesizer methods: ${prototypeProps.join(', ')}`);
+                    
+                    // Check if we can create an avatar config
+                    if (SpeechSDK.AvatarConfig) {
+                        try {
+                            log('Creating avatar config...');
+                            const avatarConfig = new SpeechSDK.AvatarConfig("lisa");
+                            log('Avatar config created successfully');
+                            
+                            // Check avatar config properties
+                            const configProps = Object.keys(avatarConfig).filter(key => typeof avatarConfig[key] !== 'function');
+                            log(`Avatar config properties: ${configProps.join(', ')}`);
+                        } catch (e) {
+                            log(`Error creating avatar config: ${e.message}`);
+                        }
+                    }
+                    
+                    // Try to create an avatar synthesizer
+                    try {
+                        log('Creating audio config...');
+                        const audioConfig = SpeechSDK.AudioConfig.fromDefaultSpeakerOutput();
+                        log('Audio config created successfully');
+                        
+                        log('Creating avatar synthesizer...');
+                        const avatarSynthesizer = new SpeechSDK.AvatarSynthesizer(speechConfig, audioConfig);
+                        log('Avatar synthesizer created successfully');
+                        
+                        // Check avatar synthesizer properties
+                        const synthProps = Object.keys(avatarSynthesizer).filter(key => typeof avatarSynthesizer[key] !== 'function');
+                        log(`Avatar synthesizer properties: ${synthProps.join(', ')}`);
+                        
+                        // Check if videoStream is available
+                        log(`videoStream property: ${avatarSynthesizer.videoStream ? 'Available' : 'Not available'}`);
+                        
+                        // Check if startAvatarAsync method exists
+                        log(`startAvatarAsync method: ${typeof avatarSynthesizer.startAvatarAsync === 'function' ? 'Available' : 'Not available'}`);
+                    } catch (e) {
+                        log(`Error creating avatar synthesizer: ${e.message}`);
+                    }
+                }
+                
+                log('SDK feature check complete');
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+        }
+        
+        // Set up event listener
+        document.getElementById('checkBtn').addEventListener('click', checkSdkFeatures);
+        
+        // Initialize
+        log('Page loaded. Click "Check SDK Features" to begin.');
+    </script>
+</body>
+</html>

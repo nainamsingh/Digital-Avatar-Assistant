@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebRTC Test</title>
+</head>
+<body>
+    <h1>WebRTC Connection Test</h1>
+    <video id="localVideo" autoplay muted style="width:400px;height:300px;"></video>
+    <div>
+        <button id="startButton">Start Camera</button>
+    </div>
+    <div id="status"></div>
+
+    <script>
+        const localVideo = document.getElementById('localVideo');
+        const startButton = document.getElementById('startButton');
+        const statusDiv = document.getElementById('status');
+        
+        startButton.addEventListener('click', async () => {
+            try {
+                statusDiv.textContent = 'Requesting camera...';
+                const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: false});
+                localVideo.srcObject = stream;
+                statusDiv.textContent = 'Camera connected successfully!';
+            } catch (error) {
+                statusDiv.textContent = `Error: ${error.message}`;
+                console.error('Error accessing camera:', error);
+            }
+        });
+    </script>
+</body>
+</html>

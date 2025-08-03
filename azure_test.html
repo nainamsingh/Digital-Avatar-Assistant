@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Azure Avatar WebRTC Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { padding: 10px; margin: 5px; }
+        #videoContainer { 
+            width: 100%; 
+            height: 400px; 
+            background-color: #000; 
+            margin: 20px 0;
+            position: relative;
+        }
+        #avatarVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        #log { 
+            border: 1px solid #ccc; 
+            padding: 10px; 
+            height: 200px; 
+            overflow-y: auto;
+            font-family: monospace;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Azure Avatar WebRTC Test</h1>
+    
+    <div>
+        <button id="startAvatarBtn">Start Avatar</button>
+        <button id="speakBtn" disabled>Make Avatar Speak</button>
+    </div>
+    
+    <div id="videoContainer">
+        <video id="avatarVideo" autoplay playsinline></video>
+    </div>
+    
+    <div id="log"></div>
+    
+    <script>
+        // Configuration
+        const speechKey = '5K4HGeAVHCcjRudmzpcX6LnZiQFo2PTQabPLhaDxTcTiwcvvsGrpJQQJ99BCACHYHv6XJ3w3AAAYACOGsXxm';
+        const speechRegion = 'eastus2';
+        let avatarSynthesizer = null;
+        
+        // Logging function
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}<br>`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+        
+        // Load the Speech SDK
+        async function loadSpeechSDK() {
+            return new Promise((resolve, reject) => {
+                if (window.SpeechSDK) {
+                    resolve(window.SpeechSDK);
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = 'https://aka.ms/csspeech/jsbrowserpackageraw';
+                script.onload = () => {
+                    if (window.SpeechSDK) {
+                        resolve(window.SpeechSDK);
+                    } else {
+                        reject(new Error('Speech SDK loaded but not available'));
+                    }
+                };
+                script.onerror = () => reject(new Error('Failed to load Speech SDK'));
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Get ICE servers
+        async function getIceServers() {
+            try {
+                log('Getting ICE servers...');
+                
+                // Create a simple STUN server configuration
+                const iceServers = [
+                    {
+                        urls: [
+                            'stun:stun.l.google.com:19302',
+                            'stun:stun1.l.google.com:19302',
+                            'stun:stun2.l.google.com:19302'
+                        ]
+                    }
+                ];
+                
+                log(`Using ${iceServers.length} ICE servers`);
+                return iceServers;
+            } catch (error) {
+                log(`Error getting ICE servers: ${error.message}`);
+                throw error;
+            }
+        }
+        
+        // Start avatar
+        async function startAvatar() {
+            try {
+                document.getElementById('startAvatarBtn').disabled = true;
+                log('Loading Speech SDK...');
+                
+                const SpeechSDK = await loadSpeechSDK();
+                log('Speech SDK loaded');
+                
+                log('Creating speech config...');
+                const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(speechKey, speechRegion);
+                speechConfig.speechSynthesisVoiceName = 'en-US-JennyNeural';
+                
+                // Enable detailed logging
+                speechConfig.setProperty(SpeechSDK.PropertyId.SpeechServiceConnection_LogLevel, 4);
+                
+                log('Creating audio config...');
+                const audioConfig = SpeechSDK.AudioConfig.fromDefaultSpeakerOutput();
+                
+                log('Checking for AvatarSynthesizer...');
+                if (!SpeechSDK.AvatarSynthesizer) {
+                    log('ERROR: AvatarSynthesizer not available in this version of the SDK');
+                    document.getElementById('startAvatarBtn').disabled = false;
+                    return;
+                }
+                
+                // Set up WebRTC
+                log('Setting up WebRTC...');
+                const iceServers = await getIceServers();
+                
+                // Create peer connection
+                const peerConnection = new RTCPeerConnection({
+                    iceServers: iceServers
+                });
+                
+                // Set up video element
+                const videoElement = document.getElementById('avatarVideo');
+                
+                // Handle incoming tracks
+                peerConnection.ontrack = (event) => {
+                    log(`Track received: ${event.track.kind}`);
+                    if (event.track.kind === 'video') {
+                        videoElement.srcObject = event.streams[0];
+                        videoElement.onloadedmetadata = () => {
+                            log(`Video dimensions: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
+                            videoElement.play().catch(e => log(`Error playing video: ${e.message}`));
+                        };
+                    }
+                };
+                
+                // Add transceivers
+                peerConnection.addTransceiver('video', { direction: 'recvonly' });
+                peerConnection.addTransceiver('audio', { direction: 'recvonly' });
+                
+                // Create offer
+                log('Creating offer...');
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                
+                // Wait for ICE gathering to complete
+                log('Waiting for ICE gathering...');
+                await new Promise(resolve => {
+                    const checkState = () => {
+                        if (peerConnection.iceGatheringState === 'complete') {
+                            resolve();
+                        } else {
+                            setTimeout(checkState, 100);
+                        }
+                    };
+                    
+                    peerConnection.addEventListener('icegatheringstatechange', () => {
+                        if (peerConnection.iceGatheringState === 'complete') {
+                            resolve();
+                        }
+                    });
+                    
+                    // Timeout after 5 seconds
+                    setTimeout(resolve, 5000);
+                    
+                    checkState();
+                });
+                
+                log('ICE gathering complete');
+                
+                // Create avatar config with WebRTC info
+                log('Creating avatar config...');
+                const avatarConfig = new SpeechSDK.AvatarConfig("lisa");
+                avatarConfig.style = "casual";
+                
+                // Create avatar synthesizer
+                log('Creating avatar synthesizer...');
+                avatarSynthesizer = new SpeechSDK.AvatarSynthesizer(speechConfig, audioConfig, avatarConfig);
+                
+                // Set up avatar event handler
+                log('Setting up avatar event handler...');
+                avatarSynthesizer.avatarEventReceived = function (s, e) {
+                    log(`Avatar event received: ${e.socialEventData || 'No data'}`);
+                };
+                
+                // Create a custom WebRTC configuration
+                const webRtcConfig = {
+                    iceServers: iceServers,
+                    peerConnection: peerConnection,
+                    localDescription: peerConnection.localDescription
+                };
+                
+                // Attach WebRTC config to avatar synthesizer
+                log('Attaching WebRTC config...');
+                try {
+                    // This is a workaround - we're trying to set the WebRTC config
+                    avatarSynthesizer.properties = avatarSynthesizer.properties || {};
+                    avatarSynthesizer.properties.webRtcConfig = webRtcConfig;
+                } catch (e) {
+                    log(`Warning: Could not set WebRTC config: ${e.message}`);
+                }
+                
+                log('Starting avatar...');
+                try {
+                    await avatarSynthesizer.startAvatarAsync();
+                    log('Avatar started successfully');
+                    document.getElementById('speakBtn').disabled = false;
+                } catch (e) {
+                    log(`Error starting avatar: ${e.message}`);
+                    
+                    // Try an alternative approach
+                    log('Trying alternative approach...');
+                    try {
+                        const ssml = `
+                            <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" 
+                                   xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="en-US">
+                                <voice name="en-US-JennyNeural">
+                                    <mstts:viseme type="FacialExpression"/>
+                                    Hello!
+                                </voice>
+                            </speak>
+                        `;
+                        
+                        avatarSynthesizer.speakSsmlAsync(
+                            ssml,
+                            result => {
+                                if (result) {
+                                    log(`Result reason: ${result.reason}`);
+                                    document.getElementById('speakBtn').disabled = false;
+                                }
+                            },
+                            error => log(`Error: ${error}`)
+                        );
+                    } catch (e2) {
+                        log(`Alternative approach failed: ${e2.message}`);
+                    }
+                }
+            } catch (error) {
+                log(`Exception: ${error.message}`);
+                document.getElementById('startAvatarBtn').disabled = false;
+            }
+        }
+        
+        // Make avatar speak
+        function makeAvatarSpeak() {
+            if (!avatarSynthesizer) {
+                log('Avatar synthesizer not initialized');
+                return;
+            }
+            
+            document.getElementById('speakBtn').disabled = true;
+            
+            const ssml = `
+                <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" 
+                       xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="en-US">
+                    <voice name="en-US-JennyNeural">
+                        <mstts:viseme type="FacialExpression"/>
+                        I'm your Digital X-Ray Technician assistant. How can I help you today?
+                    </voice>
+                </speak>
+            `;
+            
+            log('Making avatar speak...');
+            avatarSynthesizer.speakSsmlAsync(
+                ssml,
+                result => {
+                    if (result) {
+                        log(`Result reason: ${result.reason}`);
+                        
+                        if (result.reason === SpeechSDK.ResultReason.SynthesizingAudioCompleted) {
+                            log('Avatar speech completed successfully');
+                        } else {
+                            log(`Avatar speech failed: ${result.errorDetails || 'Unknown error'}`);
+                        }
+                    } else {
+                        log('No result returned');
+                    }
+                    document.getElementById('speakBtn').disabled = false;
+                },
+                error => {
+                    log(`Error: ${error}`);
+                    document.getElementById('speakBtn').disabled = false;
+                }
+            );
+        }
+        
+        // Set up event listeners
+        document.getElementById('startAvatarBtn').addEventListener('click', startAvatar);
+        document.getElementById('speakBtn').addEventListener('click', makeAvatarSpeak);
+        
+        // Initialize
+        log('Page loaded. Click "Start Avatar" to begin.');
+    </script>
+</body>
+</html>
