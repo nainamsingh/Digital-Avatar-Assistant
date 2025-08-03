@@ -1,116 +1,206 @@
-# Instructions to run Digital Avatar source code
+# Azure Digital Avatar - Real-time Text-to-Speech Avatar
 
-## Pre-requisites
+Create interactive digital avatars powered by Azure Speech Services and OpenAI. This application demonstrates real-time avatar synthesis with speech-to-text, text-to-speech, and chat capabilities.
 
-* Follow [Text to speech quickstart](https://learn.microsoft.com/azure/ai-services/speech-service/get-started-text-to-speech?pivots=programming-language-python#set-up-the-environment) to set up the environment for running Speech SDK in python.
+## Quick Start
 
-## Basic App
+1. **Clone and install dependencies**
+   ```bash
+   git clone <your-repo-url>
+   cd digital-avatar
+   pip install -r requirements.txt
+   ```
 
-This sample demonstrates the basic usage of Azure text-to-speech avatar real-time API.
+2. **Set up your environment variables** (see [Configuration](#configuration))
 
-* Step 1: Open a console and navigate to the folder containing this README.md document.
-    * Run `pip install -r requirements.txt` to install the required packages.
-    * Set below environment virables:
-        * `SPEECH_REGION` - the region of your Azure speech resource, e.g. westus2.
-        * `SPEECH_KEY` - the API key of your Azure speech resource.
-        * `SPEECH_PRIVATE_ENDPOINT` - the private endpoint of your Azure speech resource. e.g. https://my-speech-service.cognitiveservices.azure.com. This is optional, and only needed when you want to use private endpoint to access Azure speech service. This is optional, which is only needed when you are using custom endpoint.
-    * Set below environment virables if you want to use customized ICE server:
-        * `ICE_SERVER_URL` - the URL of your customized ICE server.
-        * `ICE_SERVER_URL_REMOTE` - the URL of your customized ICE server for remote side. This is only required when the ICE address for remote side is different from local side.
-        * `ICE_SERVER_USERNAME` - the username of your customized ICE server.
-        * `ICE_SERVER_PASSWORD` - the password of your customized ICE server.
-    * Run `python -m flask run -h 0.0.0.0 -p 5000` to start this sample.
+3. **Run the application**
+   ```bash
+   python -m flask run -h 0.0.0.0 -p 5000
+   ```
 
-* Step 2: Open a browser and navigate to `http://localhost:5000/basic` to view the web UI of this sample.
+4. **Open your browser** and navigate to:
+   - Basic Avatar: `http://localhost:5000/basic`
+   - Chat Avatar: `http://localhost:5000/chat`
+   - React Frontend: `http://localhost:5000/map`
 
-* Step 3: Fill or select below information:
-    * TTS Configuration
-        * TTS Voice - the voice of the TTS. Here is the [available TTS voices list](https://learn.microsoft.com/azure/ai-services/speech-service/language-support?tabs=tts#supported-languages)
-        * Custom Voice Deployment ID (Endpoint ID) - the deployment ID (also called endpoint ID) of your custom voice. If you are not using a custom voice, please leave it empty.
-        * Personal Voice Speaker Profile ID - the personal voice speaker profile ID of your personal voice. Please follow [here](https://learn.microsoft.com/azure/ai-services/speech-service/personal-voice-overview) to view and create personal voice.
-    * Avatar Configuration
-        * Avatar Character - The character of the avatar. By default it's `lisa`, and you can update this value to use a different avatar.
-        * Avatar Style - The style of the avatar. You can update this value to use a different avatar style. This parameter is optional for custom avatar.
-        * Background Color - The color of the avatar background.
-        * Background Image (URL) - The URL of the background image. If you want to have a background image for the avatar, please fill this field. You need first upload your image to a publicly accessbile place, with a public URL. e.g. https://samples-files.com/samples/Images/jpg/1920-1080-sample.jpg
-        * Custom Avatar - Check this if you are using a custom avatar.
-        * Transparent Background - Check this if you want to use transparent background for the avatar. When this is checked, the background color of the video stream from server side is automatically set to green(#00FF00FF), and the js code on client side (check the `makeBackgroundTransparent` function in main.js) will do the real-time matting by replacing the green color with transparent color.
-        * Video Crop - By checking this, you can crop the video stream from server side to a smaller size. This is useful when you want to put the avatar video into a customized rectangle area.
+## Table of Contents
 
-* Step 4: Click `Start Session` button to setup video connection with Azure TTS Talking Avatar service. If everything goes well, you should see a live video with an avatar being shown on the web page.
+- [Prerequisites](#prerequisites)
+- [Configuration](#configuration)
+- [Applications](#applications)
+  - [Basic Avatar App](#basic-avatar-app)
+  - [Chat Avatar App](#chat-avatar-app)
+  - [React Frontend](#react-frontend)
+- [Troubleshooting](#troubleshooting)
+- [Advanced Configuration](#advanced-configuration)
 
-* Step 5: Type some text in the `Spoken Text` text box and click `Speak` button to send the text to Azure TTS Talking Avatar service. The service will synthesize the text to talking avatar video, and send the video stream back to the browser. The browser will play the video stream. You should see the avatar speaking the text you typed with mouth movement, and hear the voice which is synchronized with the mouth movement.
+## Prerequisites
 
-* Step 6: You can either continue to type text in the `Spoken Text` text box and let the avatar speak that text by clicking `Speak` button, or click `Stop Session` button to stop the video connection with Azure TTS Talking Avatar service. If you click `Stop Session` button, you can click `Start Session` button to start a new video connection with Azure TTS Talking Avatar service.
+- **Python 3.7+** installed on your system
+- **Azure Speech Services** resource with API key
+- **Azure OpenAI** resource (for chat functionality)
+- **Modern web browser** with microphone access
+- **Flask** and other dependencies (installed via requirements.txt)
 
-## Chat App
+Follow the [Azure Text-to-Speech quickstart](https://docs.microsoft.com/azure/cognitive-services/speech-service/get-started-text-to-speech) to set up your Azure environment.
 
-This sample demonstrates the chat scenario, with integration of Azure speech-to-text, Azure OpenAI, and Azure text-to-speech avatar real-time API.
+## Configuration
 
-* Step 1: Open a console and navigate to the folder containing this README.md document.
-    * Run `pip install -r requirements.txt` to install the required packages.
-    * Set below environment virables:
-        * `SPEECH_REGION` - the region of your Azure speech resource, e.g. westus2.
-        * `SPEECH_KEY` - the API key of your Azure speech resource.
-        * `SPEECH_PRIVATE_ENDPOINT` - the private endpoint of your Azure speech resource. e.g. https://my-speech-service.cognitiveservices.azure.com. This is optional, and only needed when you want to use private endpoint to access Azure speech service. This is optional, which is only needed when you are using custom endpoint. For more information about private endpoint, please refer to [Enable private endpoint](https://learn.microsoft.com/azure/ai-services/speech-service/speech-services-private-link).
-        * `SPEECH_RESOURCE_URL` - the URL of your Azure speech resource, e.g. /subscriptions/6e83d8b7-00dd-4b0a-9e98-dab9f060418b/resourceGroups/my-resource-group/providers/Microsoft.CognitiveServices/accounts/my-speech-resource. To fetch the speech resource URL, go to your speech resource overview page on Azure portal, click `JSON View` link, and then copy the `Resource ID` value on the popped up page. This is optional, which is only needed when you want to use private endpoint to access Azure speech service.
-        * `USER_ASSIGNED_MANAGED_IDENTITY_CLIENT_ID` - the client ID of your user-assigned managed identity. This is optional, which is only needed when you want to use private endpoint with user-assigned managed identity to access Azure speech service. For more information about user-assigned managed identity, please refer to [Use a user-assigned managed identity](https://learn.microsoft.com/azure/active-directory/managed-identities-azure-resources/how-to-use-vm-token?tabs=azure-cli).
-        * `AZURE_OPENAI_ENDPOINT` - the endpoint of your Azure OpenAI resource, e.g. https://my-aoai.openai.azure.com/, which can be found in the `Keys and Endpoint` section of your Azure OpenAI resource in Azure portal.
-        * `AZURE_OPENAI_API_KEY` - the API key of your Azure OpenAI resource, which can be found in the `Keys and Endpoint` section of your Azure OpenAI resource in Azure portal.
-        * `AZURE_OPENAI_DEPLOYMENT_NAME` - the name of your Azure OpenAI model deployment, which can be found in the `Model deployments` section of your Azure OpenAI resource in Azure portal.
-    * Set below environment virables if you want to use your own data to constrain the chat:
-        * `COGNITIVE_SEARCH_ENDPOINT` - the endpoint of your Azure Cognitive Search resource, e.g. https://my-cognitive-search.search.windows.net/, which can be found in the `Overview` section of your Azure Cognitive Search resource in Azure portal, appearing at `Essentials -> Url` field.
-        * `COGNITIVE_SEARCH_API_KEY` - the API key of your Azure Cognitive Search resource, which can be found in the `Keys` section of your Azure Cognitive Search resource in Azure portal. Please make sure to use the `Admin Key` instead of `Query Key`.
-        * `COGNITIVE_SEARCH_INDEX_NAME` - the name of your Azure Cognitive Search index, which can be found in the `Indexes` section of your Azure Cognitive Search resource in Azure portal.
-    * Set below environment virables if you want to use customized ICE server:
-        * `ICE_SERVER_URL` - the URL of your customized ICE server.
-        * `ICE_SERVER_URL_REMOTE` - the URL of your customized ICE server for remote side. This is only required when the ICE address for remote side is different from local side.
-        * `ICE_SERVER_USERNAME` - the username of your customized ICE server.
-        * `ICE_SERVER_PASSWORD` - the password of your customized ICE server.
-    * Run `python -m flask run -h 0.0.0.0 -p 5000` to start this sample.
+### Required Environment Variables
 
-* Step 2: Open a browser and navigate to `http://localhost:5000/chat` to view the web UI of this sample.
+Create these environment variables before running the application:
 
-* Step 3: Fill or select below information:
-    * Chat Configuration
-        * Azure OpenAI Deployment Name - the name of your Azure OpenAI model deployment, which can be found in the `Model deployments` section of your Azure OpenAI resource in Azure portal.
-        * System Prompt - you can edit this text to preset the context for the chat API. The chat API will then generate the response based on this context.
-        * Enable On Your Data - check this if you want to use your own data to constrain the chat. If you check this, you need to fill `Azure Cognitive Search Index Name` field below.
-        * Azure Cognitive Search Index Name - the name of your Azure Cognitive Search index, which can be found in the `Indexes` section of your Azure Cognitive Search resource in Azure portal.
-    * Speech Configuration
-        * STT Locale(s) - the locale(s) of the STT. Here is the [available STT languages list](https://learn.microsoft.com/azure/ai-services/speech-service/language-support?tabs=stt#supported-languages). If multiple locales are specified, the STT will enable multi-language recognition, which means the STT will recognize the speech in any of the specified locales.
-        * TTS Voice - the voice of the TTS. Here is the [available TTS voices list](https://learn.microsoft.com/azure/ai-services/speech-service/language-support?tabs=tts#supported-languages)
-        * Custom Voice Deployment ID (Endpoint ID) - the deployment ID (also called endpoint ID) of your custom voice. If you are not using a custom voice, please leave it empty.
-        * Personal Voice Speaker Profile ID - the personal voice speaker profile ID of your personal voice. Please follow [here](https://learn.microsoft.com/azure/ai-services/speech-service/personal-voice-overview) to view and create personal voice.
-        * Continuous Conversation - check this if you want to enable continuous conversation. If this is checked, the STT will keep listening to your speech, with microphone always on until you click `Stop Microphone` button. If this is not checked, the microphone will automatically stop once an utterance is recognized, and you need click `Start Microphone` every time before you give a speech. The `Continuous Conversation` mode is suitable for quiet environment, while the `Non-Continuous Conversation` mode is suitable for noisy environment, which can avoid the noise being recorded while you are not speaking.
-    * Avatar Configuration
-        * Avatar Character - The character of the avatar. By default it's `lisa`, and you can update this value to use a different avatar.
-        * Avatar Style - The style of the avatar. You can update this value to use a different avatar style. This parameter is optional for custom avatar.
-        * Custom Avatar - Check this if you are using a custom avatar.
-        * Auto Reconnect - Check this if you want to enable auto reconnect. If this is checked, the avatar video stream is automatically reconnected once the connection is lost.
-        * Use Local Video for Idle - Check this if you want to use local video for idle part. If this is checked, the avatar video stream is replaced by local video when the avatar is idle. To use this feature, you need to prepare a local video file. Usually, you can record a video of the avatar doing idle action. [Here](https://ttspublic.blob.core.windows.net/sampledata/video/avatar/lisa-casual-sitting-idle.mp4) is a sample video for lisa-casual-sitting avatar idle status. You can download it and put it to `video/lisa-casual-sitting-idle.mp4` under the same folder of `chat.html`.
+```bash
+# Azure Speech Services
+export SPEECH_REGION="eastus2"                    # Your Azure Speech resource region
+export SPEECH_KEY="your_speech_api_key"           # Your Azure Speech API key
 
-* Step 4: Click `Open Avatar Session` button to setup video connection with Azure TTS Talking Avatar service. If everything goes well, you should see a live video with an avatar being shown on the web page.
+# Azure OpenAI (for chat functionality)
+export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com/"
+export AZURE_OPENAI_API_KEY="your_openai_api_key"
+export AZURE_OPENAI_DEPLOYMENT_NAME="gpt-35-turbo"
+```
 
-* Step 5: Click `Start Microphone` button to start microphone (make sure to allow the microphone access tip box popping up in the browser), and then you can start chatting with the avatar with speech. The chat history (the text of what you said, and the response text by the Azure OpenAI chat API) will be shown beside the avatar. The avatar will then speak out the response of the chat API.
+### Optional Environment Variables
 
-# Additional Tip(s)
+```bash
+# Private Endpoint (optional)
+export SPEECH_PRIVATE_ENDPOINT="https://my-speech-service.cognitiveservices.azure.com"
+export SPEECH_RESOURCE_URL="/subscriptions/.../providers/Microsoft.CognitiveServices/accounts/..."
+export USER_ASSIGNED_MANAGED_IDENTITY_CLIENT_ID="your_client_id"
 
-* If you want to enforce the avatar to stop speaking before the avatar finishes the utterance, you can click `Stop Speaking` button. This is useful when you want to interrupt the avatar speaking.
+# Azure Cognitive Search (for constrained chat)
+export COGNITIVE_SEARCH_ENDPOINT="https://your-search.search.windows.net/"
+export COGNITIVE_SEARCH_API_KEY="your_search_api_key"
+export COGNITIVE_SEARCH_INDEX_NAME="your_index_name"
 
-* If you want to clear the chat history and start a new round of chat, you can click `Clear Chat History` button. And if you want to stop the avatar service, please click `Close Avatar Session` button to close the connection with avatar service.
+# Custom ICE Server (optional)
+export ICE_SERVER_URL="your_ice_server_url"
+export ICE_SERVER_URL_REMOTE="your_remote_ice_server_url"
+export ICE_SERVER_USERNAME="your_ice_username"
+export ICE_SERVER_PASSWORD="your_ice_password"
+```
 
-* If you want to type your query message instead of speaking, you can check the `Type Message` checkbox, and then type your query message in the text box showing up below the checkbox.
+## Applications
 
+### Basic Avatar App
 
-# Frontend React Application
+**What it does**: Simple text-to-speech avatar that speaks any text you provide.
 
-* Step 1: Run web application in development mode. Open a console and navigate to frontend folder.
-    * Run `npm install` to install npm package
-    * Run `npm run dev` frontend application locally
+**How to use**:
+1. Navigate to `http://localhost:5000/basic`
+2. Configure your avatar settings:
+   - **TTS Voice**: Choose from [available voices](https://docs.microsoft.com/azure/cognitive-services/speech-service/language-support#text-to-speech)
+   - **Avatar Character**: Default is 'lisa', customize as needed
+   - **Background**: Set color or image URL
+3. Click **Start Session** to initialize the avatar
+4. Type text and click **Speak** to make the avatar talk
+5. Click **Stop Session** when finished
 
-* Step 2: Open a console and navigate to the folder containing this README.md document.
-    * Run `pip install -r requirements.txt` to install the required packages.
-    * Run `python -m flask run -h 0.0.0.0 -p 5000` to start this sample.
+**Features**:
+- Real-time avatar synthesis
+- Customizable backgrounds and characters
+- Transparent background support
+- Video cropping options
+- Custom and personal voice support
 
-* Step 3: Open a browser and navigate to `http://localhost:5000/map` to view the web UI of this sample.
+### Chat Avatar App
+
+**What it does**: Interactive chat experience combining speech recognition, OpenAI chat, and avatar responses.
+
+**How to use**:
+1. Navigate to `http://localhost:5000/chat`
+2. Configure chat settings:
+   - **System Prompt**: Set the AI's personality/context
+   - **STT Locale**: Choose speech recognition language
+   - **Conversation Mode**: Continuous or single-utterance
+3. Configure avatar settings (same as Basic App)
+4. Click **Open Avatar Session**
+5. Click **Start Microphone** and begin speaking
+6. The avatar will respond with both text and speech
+
+**Features**:
+- Voice-to-voice conversation
+- Azure OpenAI integration
+- Chat history display
+- Custom data integration via Azure Cognitive Search
+- Interrupt and control options
+- Text input as alternative to speech
+
+### React Frontend
+
+**What it does**: Modern React-based interface for the avatar system.
+
+**How to use**:
+1. **Set up React development environment**:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+2. **Start the Flask backend** (in separate terminal):
+   ```bash
+   python -m flask run -h 0.0.0.0 -p 5000
+   ```
+3. Navigate to `http://localhost:5000/map`
+
+## Troubleshooting
+
+### Common Issues
+
+**Avatar not appearing**
+- Verify your `SPEECH_KEY` and `SPEECH_REGION` are correct
+- Check browser console for WebRTC errors
+- Ensure your network allows WebRTC connections
+
+**Microphone not working**
+- Allow microphone permissions in your browser
+- Check if microphone is being used by other applications
+- Try different browsers (Chrome/Edge recommended)
+
+**Chat responses not working**
+- Verify Azure OpenAI credentials are correct
+- Check that your deployment name matches `AZURE_OPENAI_DEPLOYMENT_NAME`
+- Ensure your OpenAI resource has sufficient quota
+
+**Connection timeouts**
+- Check your network firewall settings
+- If using private endpoints, verify network configuration
+- Try without custom ICE server settings first
+
+### Getting Help
+
+If you encounter issues:
+1. Check the browser developer console for error messages
+2. Verify all environment variables are set correctly
+3. Test with the Basic App before trying Chat App
+4. Ensure your Azure resources are properly configured and have available quota
+
+## Advanced Configuration
+
+### Custom Avatars
+- Set `Custom Avatar` checkbox for personalized characters
+- Configure `Avatar Style` for different poses/expressions
+- Use `Avatar Character` field to specify custom avatar IDs
+
+### Background Customization
+- **Solid Color**: Use hex color codes (e.g., #FF0000)
+- **Image Background**: Provide publicly accessible image URLs
+- **Transparent**: Enable for green-screen effect with custom compositing
+
+### Voice Customization
+- **Custom Voice**: Use `Custom Voice Deployment ID` for trained voices
+- **Personal Voice**: Use `Personal Voice Speaker Profile ID` for cloned voices
+- **Multi-language**: Specify multiple locales for STT recognition
+
+### Performance Optimization
+- **Auto Reconnect**: Automatically handles connection drops
+- **Local Video for Idle**: Uses local video files during idle periods
+- **Video Crop**: Reduces bandwidth by cropping avatar video
+
+## Additional Resources
+
+- [Azure Speech Services Documentation](https://docs.microsoft.com/azure/cognitive-services/speech-service/)
+- [Azure OpenAI Documentation](https://docs.microsoft.com/azure/cognitive-services/openai/)
+- [Available TTS Voices](https://docs.microsoft.com/azure/cognitive-services/speech-service/language-support#text-to-speech)
+- [STT Language Support](https://docs.microsoft.com/azure/cognitive-services/speech-service/language-support#speech-to-text)
